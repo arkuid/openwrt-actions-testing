@@ -1,0 +1,138 @@
+name: Build OpenWrt v0.4
+
+on:
+  workflow_dispatch:
+    inputs:
+      openwrt_version:
+        description: "OpenWrt version"
+        type: string
+        required: true
+        default: "24.10.5"
+      openwrt_arch:
+        description: "OpenWrt arch"
+        type: string
+        required: true
+        default: "mipsel_24kc"
+      openwrt_target:
+        description: "OpenWrt target"
+        type: string
+        required: true
+        default: "ramips"
+      openwrt_subtarget:
+        description: "OpenWrt subtarget"
+        type: string
+        required: true
+        default: "mt7620"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential clang flex bison g++ gawk \
+        gettext git libncurses5-dev libssl-dev python3 python3-setuptools \
+        rsync unzip zlib1g-dev file wget
+
+    - name: Clone OpenWrt source
+      run: |
+        if [ "${{ inputs.openwrt_version }}" = "SNAPSHOT" ]; then
+        git clone https://github.com/openwrt/openwrt.git --depth 1
+        else
+        git clone https://github.com/openwrt/openwrt.git --depth 1 -b v${{ github.event.inputs.version }}
+        fi
+    - name: Replace feeds source
+      working-directory: openwrt
+      run: |
+        sed -i 's|git.openwrt.org/feed/|github.com/openwrt/|g' feeds.conf.default
+        sed -i 's|git.openwrt.org/project/|github.com/openwrt/|g' feeds.conf.default
+        cat feeds.conf.default
+        echo "CONFIG_TARGET_MULTI_PROFILE=n" >> openwrt/.config
+        echo "CONFIG_TARGET_PROFILE="DEVICE_tplink_archer-c5-v4"" >> openwrt/.config
+    - name: Load and sync configuration
+      working-directory: openwrt
+      run: |
+        ./scripts/feeds update -a
+        $base_url/config.buildinfo" > openwrt/.config
+        if [ "${{ inputs.openwrt_version }}" = "SNAPSHOT" ]; then
+          curl -fsL "https://downloads.openwrt.org/snapshots/targets/${{ inputs.openwrt_target }}/${{ inputs.openwrt_subtarget }}/config.buildinfo"  > .config
+        else
+          curl -fsL "https://downloads.openwrt.org/releases/${{ inputs.openwrt_version }}/targets/${{ inputs.openwrt_target }}/${{ inputs.openwrt_subtarget }}/config.buildinfo"  > .config
+        fi
+        ./scripts/feeds install -a
+
+    - name: Download packages
+      working-directory: openwrt
+      run: |
+        make download -j$(nproc)
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+
+    - name: Compile the firmware
+      id: compile
+      working-directory: openwrt
+      run: |
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc) V=s || make -j1 V=s
+        
+        echo "status=success" >> $GITHUB_OUTPUT
+        
+        grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
+        [ -s DEVICE_NAME ] && echo "DEVICE_NAME=$(cat DEVICE_NAME)" >> $GITHUB_ENV
+        echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+
+    - name: Check space usage
+      if: (!cancelled())
+      run: df -hT
+
+    - name: Find and upload ImageBuilder
+      if: steps.compile.outputs.status == 'success'
+      working-directory: openwrt/bin
+      run: |
+        IMAGEBUILDER_FILES=$(find . -name "*imagebuilder*" -type f)
+        if [ -n "$IMAGEBUILDER_FILES" ]; then
+          echo "Found ImageBuilder files:"
+          echo "$IMAGEBUILDER_FILES"
+        else
+          echo "No ImageBuilder files found"
+          exit 1
+        fi
+
+    - name: Upload ImageBuilder artifacts
+      uses: actions/upload-artifact@v4
+      if: steps.compile.outputs.status == 'success'
+      with:
+        name: OpenWrt_ImageBuilder_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
+        path: |
+          openwrt/bin/targets/**/*imagebuilder*
+        retention-days: 30
+
+    - name: Upload bin directory
+      uses: actions/upload-artifact@v4
+      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      with:
+        name: OpenWrt_bin_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
+        path: openwrt/bin
+        retention-days: 7
+
+    - name: Organize firmware files
+      id: organize
+      if: steps.compile.outputs.status == 'success' && !cancelled()
+      run: |
+        cd openwrt/bin/targets/*/*
+        rm -rf packages
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Upload firmware directory
+      uses: actions/upload-artifact@v4
+      if: steps.organize.outputs.status == 'success' && !cancelled()
+      with:
+        name: OpenWrt_firmware_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
+        path: ${{ env.FIRMWARE }}
+        retention-days: 30
