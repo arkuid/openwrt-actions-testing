@@ -16,8 +16,10 @@ env:
   OPENWRT_DEVICE: tplink
 
 jobs:
-  build:
+  create-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Maximize build space
@@ -92,7 +94,6 @@ jobs:
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
         echo "date1=$(date "+%d.%m.%Y")" >> $GITHUB_ENV
-        echo "date2=$(date "+%d %m %Y года")" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Organize and Rename Files
@@ -100,7 +101,7 @@ jobs:
       if: ${{ env.UPLOAD_FIRMWARE == 'true' && !cancelled() }}
       run: |
         cd openwrt/bin/targets/ath79/generic/
-        rm -rf packages *.config *.buildinfo *.json sha256sums 
+        rm -rf packages * *.config *.buildinfo *.json sha256sums && find . -maxdepth 1 -type f \( -name "*.tar.zst" ! -name "openwrt-imagebuilder-*.tar.zst" \) -exec rm -f {} \; 
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
         
@@ -115,7 +116,7 @@ jobs:
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        echo "release_tag=${{ env.date2 }}" >> $GITHUB_OUTPUT
+        echo "release_tag=${{ env.date1 }}" >> $GITHUB_OUTPUT
         touch release.txt
         echo "📥 Загрузка прошивки" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
