@@ -50,11 +50,21 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        chmod +x $OPENWRT_NAME/*.sh
-        $GITHUB_WORKSPACE/$OPENWRT_NAME/system-Information.sh
+        # Проверяем наличие скриптов и даем права
+        if [ -f "$OPENWRT_NAME/*.sh" ]; then
+          chmod +x $OPENWRT_NAME/*.sh
+          $GITHUB_WORKSPACE/$OPENWRT_NAME/system-Information.sh
+        fi
         
     - name: Download firmware source code
       run: |
+        # Удаляем директорию если она уже существует
+        if [ -d "openwrt" ]; then
+          echo "Удаляем существующую директорию openwrt..."
+          rm -rf openwrt
+        fi
+        
+        echo "Клонируем OpenWrt $REPO_BRANCH..."
         git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
 
     - name: Update & install feeds
@@ -65,15 +75,31 @@ jobs:
         
     - name: Load feeds.conf.default
       run: |
-        chmod +x $OPENWRT_NAME/*.sh
-        cd openwrt
-        $GITHUB_WORKSPACE/$DIY_P1_SH
+        # Проверяем наличие скриптов
+        if [ -f "$GITHUB_WORKSPACE/$DIY_P1_SH" ]; then
+          chmod +x "$GITHUB_WORKSPACE/$DIY_P1_SH"
+          cd openwrt
+          "$GITHUB_WORKSPACE/$DIY_P1_SH"
+        else
+          echo "Скрипт $DIY_P1_SH не найден"
+        fi
 
     - name: Load config
       run: |
-        [ -e "$CONFIG_FILE" ] && cat "$CONFIG_FILE" > openwrt/.config
-        chmod +x $OPENWRT_NAME/*.sh && cd openwrt
-        $GITHUB_WORKSPACE/$DIY_P2_SH
+        # Копируем конфиг если файл существует
+        if [ -e "$CONFIG_FILE" ]; then
+          echo "Копируем конфигурационный файл..."
+          cat "$CONFIG_FILE" > openwrt/.config
+        fi
+        
+        # Выполняем второй скрипт если существует
+        if [ -f "$GITHUB_WORKSPACE/$DIY_P2_SH" ]; then
+          chmod +x "$GITHUB_WORKSPACE/$DIY_P2_SH"
+          cd openwrt
+          "$GITHUB_WORKSPACE/$DIY_P2_SH"
+        else
+          echo "Скрипт $DIY_P2_SH не найден"
+        fi
 
     - name: Download the installation package
       id: package
@@ -82,6 +108,7 @@ jobs:
         make defconfig
         cat .config
         make download -j$(nproc)
+        # Удаляем поврежденные/маленькие файлы
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
              
@@ -89,10 +116,11 @@ jobs:
       id: compile
       run: |
         cd openwrt
-        echo -e "$(nproc) thread compile"
+        echo -e "$(nproc) потоков для компиляции"
         make -j$(nproc) || make -j1 || make -j1 V=s
         echo "date1=$(date "+%d.%m.%Y")" >> $GITHUB_ENV
         echo "date2=$(date "+%d %m %Y года")" >> $GITHUB_ENV
+        echo "date3=$(date "+%Y.%m.%d")" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Organize and Rename Files
@@ -100,6 +128,7 @@ jobs:
       if: ${{ env.UPLOAD_FIRMWARE == 'true' && !cancelled() }}
       run: |
         cd openwrt/bin/targets/ath79/generic/
+        # Удаляем лишние файлы
         rm -rf packages *.config *.buildinfo *.json sha256sums 
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
