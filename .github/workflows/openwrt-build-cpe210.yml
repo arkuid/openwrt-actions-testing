@@ -65,14 +65,14 @@ jobs:
         
     - name: Load feeds.conf.default
       run: |
-        chmod +x $OPENWRT_NAME/*.sh
+        chmod +x $OPENWRT_DEVICE/*.sh
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P1_SH
 
     - name: Load config
       run: |
         [ -e "$CONFIG_FILE" ] && cat "$CONFIG_FILE" > openwrt/.config
-        chmod +x $OPENWRT_NAME/*.sh && cd openwrt
+        chmod +x $OPENWRT_DEVICE/*.sh && cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
 
     - name: Download the installation package
