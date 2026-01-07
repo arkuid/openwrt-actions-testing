@@ -69,7 +69,7 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        chmod +x scripts/system-Information.sh 2>/dev/null || true
+        chmod +x scripts/*.sh 2>/dev/null || true
         $GITHUB_WORKSPACE/scripts/system-Information.sh
         
     - name: Download firmware source code
@@ -156,19 +156,18 @@ jobs:
       with:
         name: ${{ env.date1 }}_${{ env.DEVICE_VENDOR }}_${{ env.DEVICE_MODEL }}
         path: ${{ env.FIRMWARE }}
-
+        
     - name: Generate release tags
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
         release_tag="${{ env.DEVICE_VENDOR }}-${{ env.DEVICE_MODEL }}-${{ env.date1 }}"
         echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
-        
-        # Создаем информационный файл для релиза
         cat > release.txt << EOF
 Device: ${{ env.DEVICE_VENDOR }} ${{ env.DEVICE_MODEL }}
 OpenWrt version: ${{ env.REPO_BRANCH }}
 Build date: ${{ env.date1 }}
+EOF
         echo "status=success" >> $GITHUB_OUTPUT
         
     - name: Publish to release
