@@ -1,0 +1,183 @@
+name: openwrt build v2
+
+on:
+  workflow_dispatch:
+    inputs:
+      device_vendor:
+        description: 'Device vendor'
+        required: true
+        default: 'tplink'
+      device_model:
+        description: 'Device model'
+        required: true
+        default: 'cpe210'
+      openwrt_branch:
+        description: 'OpenWrt branch/version'
+        required: false
+        default: 'v24.10.5'
+
+env:
+  REPO_URL: https://github.com/openwrt/openwrt
+  TZ: Europe/Moscow
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    env:
+      DEVICE_VENDOR: ${{ github.event.inputs.device_vendor }}
+      DEVICE_MODEL: ${{ github.event.inputs.device_model }}
+      REPO_BRANCH: ${{ github.event.inputs.openwrt_branch }}
+      CONFIG_DIR: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}
+      CONFIG_FILE: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/make-config
+      DIY_P0_SH: scripts/feed-conf.sh
+      DIY_P1_SH: scripts/customscript2.sh
+      DIY_P2_SH: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/customscript.sh
+      UPLOAD_FIRMWARE: true
+      UPLOAD_RELEASE: true
+
+    steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        root-reserve-mb: 512
+        swap-size-mb: 1024
+        remove-dotnet: 'true'
+        remove-android: 'true'
+        remove-haskell: 'true'
+        remove-codeql: 'true'
+        
+    - name: Check out the project branch
+      uses: actions/checkout@main
+
+    - name: Initialize the compilation environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        ( sudo -E apt-get -qq update
+        sudo -E apt-get -qq install build-essential clang flex g++ gawk gcc-multilib gettext \
+        git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev swig libpython3-dev aria2 jq subversion qemu-utils ccache rename libelf-dev
+        sudo -E apt-get -qq purge azure-cli ghc* zulu* hhvm llvm* firefox powershell openjdk* dotnet* google* mysql* php* android* rename speedtest-cli
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean ) &
+        sudo timedatectl set-timezone "$TZ"
+        
+    - name: Initialize Environment and Display System Info
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        chmod +x scripts/system-Information.sh 2>/dev/null || true
+        $GITHUB_WORKSPACE/scripts/system-Information.sh
+        
+    - name: Download firmware source code
+      run: |
+        git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+
+    - name: Update & install feeds
+      working-directory: ./openwrt
+      run: |
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: Load feeds.conf.default
+      run: |
+        chmod +x "$DIY_P0_SH"
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P0_SH
+
+    - name: Load config
+      run: |
+        [ -e "$CONFIG_FILE" ] && cat "$CONFIG_FILE" > openwrt/.config
+        chmod +x "$DIY_P1_SH" && cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P1_SH
+
+    - name: Run custom pre-config script (if exists)
+      id: custom_pre_config
+      run: |
+        if [ -f "$DIY_P2_SH" ]; then
+          echo "Running custom script 0: $DIY_P0_SH"
+          chmod +x "$DIY_P2_SH"
+          cd openwrt
+          $GITHUB_WORKSPACE/$DIY_P0_SH
+          echo "status=executed" >> $GITHUB_OUTPUT
+        else
+          echo "No custom script 0 found at $DIY_P0_SH, skipping..."
+          echo "status=skipped" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Download the installation package
+      id: package
+      run: |
+        cd openwrt
+        make defconfig
+        cat .config
+        make download -j$(nproc)
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+
+    - name: Compile the firmware
+      id: compile
+      run: |
+        cd openwrt
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc) || make -j1 || make -j1 V=s
+        echo "date1=$(date "+%d.%m.%Y")" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Organize Files
+      id: organize
+      if: ${{ env.UPLOAD_FIRMWARE == 'true' && !cancelled() }}
+      run: |
+        cd openwrt/bin/targets/
+        find . -type f \( -name "*sysupgrade*.bin" -o -name "*factory*.bin" \) ! -path "*/packages/*" -print0 | head -1 | while IFS= read -r -d '' first_file; do
+          TARGET_DIR=$(dirname "$(dirname "$first_file")")
+          echo "Found target directory: $TARGET_DIR"
+          echo "TARGET_DIR=$TARGET_DIR" >> $GITHUB_ENV
+        done
+        if [ -z "$TARGET_DIR" ]; then
+          echo "ERROR: Could not find target directory!"
+          exit 1
+        fi
+        cd "openwrt/bin/targets/$TARGET_DIR"
+        echo "Current directory: $PWD"
+        ls -la
+        rm -rf packages *.config *.buildinfo *.json sha256sums && find . -maxdepth 1 -type f \( -name "*.tar.zst" ! -name "openwrt-imagebuilder-*.tar.zst" \) -exec rm -f {} \;
+        echo "After cleanup:"
+        ls -la
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Upload the firmware to github
+      uses: actions/upload-artifact@main
+      if: steps.organize.outputs.status == 'success' && !cancelled()
+      with:
+        name: ${{ env.date1 }}_${{ env.DEVICE_VENDOR }}_${{ env.DEVICE_MODEL }}
+        path: ${{ env.FIRMWARE }}
+
+    - name: Generate release tags
+      id: tag
+      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+      run: |
+        release_tag="${{ env.DEVICE_VENDOR }}-${{ env.DEVICE_MODEL }}-${{ env.date1 }}"
+        echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
+        
+        # Создаем информационный файл для релиза
+        cat > release.txt << EOF
+Device: ${{ env.DEVICE_VENDOR }} ${{ env.DEVICE_MODEL }}
+OpenWrt version: ${{ env.REPO_BRANCH }}
+Build date: ${{ env.date1 }}
+        echo "status=success" >> $GITHUB_OUTPUT
+        
+    - name: Publish to release
+      uses: softprops/action-gh-release@v1
+      if: steps.tag.outputs.status == 'success' && !cancelled()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: ${{ env.FIRMWARE }}/*
+        name: ${{ env.DEVICE_VENDOR }}-${{ env.DEVICE_MODEL }}-${{ env.date1 }}
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        body_path: release.txt
