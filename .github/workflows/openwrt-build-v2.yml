@@ -124,7 +124,7 @@ jobs:
         cd openwrt
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
-        echo "date1=$(date "+%d.%m.%Y")" >> $GITHUB_ENV
+        echo "date1=$(date +%d.%m.%Y)" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Organize Files
@@ -161,16 +161,9 @@ jobs:
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        release_tag="${{ env.DEVICE_VENDOR }}-${{ env.DEVICE_MODEL }}-${{ env.date1 }}"
-        echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
-        
-        # Создаем информационный файл для релиза
-        cat > release.txt << 'EOF'
-Device: ${{ env.DEVICE_VENDOR }} ${{ env.DEVICE_MODEL }}
-OpenWrt version: ${{ env.REPO_BRANCH }}
-Build date: ${{ env.date1 }}
-EOF
-        
+        echo "release_tag=${{ env.date2 }}" >> $GITHUB_OUTPUT
+        touch release.txt
+        echo "📥 Загрузка прошивки" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
     
     - name: Publish to release
