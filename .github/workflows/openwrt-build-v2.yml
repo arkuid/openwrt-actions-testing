@@ -165,15 +165,10 @@ jobs:
         echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
         
         # Создаем информационный файл для релиза
-        DEVICE_VENDOR="${{ env.DEVICE_VENDOR }}"
-        DEVICE_MODEL="${{ env.DEVICE_MODEL }}"
-        REPO_BRANCH="${{ env.REPO_BRANCH }}"
-        BUILD_DATE="${{ env.date1 }}"
-        
-        cat > release.txt << EOF
-Device: $DEVICE_VENDOR $DEVICE_MODEL
-OpenWrt version: $REPO_BRANCH
-Build date: $BUILD_DATE
+        cat > release.txt << 'EOF'
+Device: ${{ env.DEVICE_VENDOR }} ${{ env.DEVICE_MODEL }}
+OpenWrt version: ${{ env.REPO_BRANCH }}
+Build date: ${{ env.date1 }}
 EOF
         
         echo "status=success" >> $GITHUB_OUTPUT
