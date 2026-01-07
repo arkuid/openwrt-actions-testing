@@ -76,17 +76,17 @@ jobs:
       run: |
         git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
 
+    - name: Modify feeds.conf.default
+      run: |
+        chmod +x "$DIY_P0_SH"
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P0_SH
+
     - name: Update & install feeds
       working-directory: ./openwrt
       run: |
         ./scripts/feeds update -a
         ./scripts/feeds install -a
-
-    - name: Load feeds.conf.default
-      run: |
-        chmod +x "$DIY_P0_SH"
-        cd openwrt
-        $GITHUB_WORKSPACE/$DIY_P0_SH
 
     - name: Load config
       run: |
@@ -98,13 +98,13 @@ jobs:
       id: custom_pre_config
       run: |
         if [ -f "$DIY_P2_SH" ]; then
-          echo "Running custom script 0: $DIY_P0_SH"
+          echo "Running custom script: $DIY_P2_SH"
           chmod +x "$DIY_P2_SH"
           cd openwrt
           $GITHUB_WORKSPACE/$DIY_P0_SH
           echo "status=executed" >> $GITHUB_OUTPUT
         else
-          echo "No custom script 0 found at $DIY_P0_SH, skipping..."
+          echo "No custom script found at $DIY_P2_SH, skipping..."
           echo "status=skipped" >> $GITHUB_OUTPUT
         fi
 
