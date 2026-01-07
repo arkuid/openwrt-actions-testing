@@ -156,7 +156,7 @@ jobs:
       with:
         name: ${{ env.date1 }}_${{ env.DEVICE_VENDOR }}_${{ env.DEVICE_MODEL }}
         path: ${{ env.FIRMWARE }}
-        
+
     - name: Generate release tags
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
@@ -172,7 +172,7 @@ Build date: ${{ env.date1 }}
 EOF
         
         echo "status=success" >> $GITHUB_OUTPUT
-        
+    
     - name: Publish to release
       uses: softprops/action-gh-release@v1
       if: steps.tag.outputs.status == 'success' && !cancelled()
