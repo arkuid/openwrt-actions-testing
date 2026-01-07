@@ -13,7 +13,7 @@ on:
         default: 'cpe210'
       openwrt_branch:
         description: 'OpenWrt branch/version'
-        required: false
+        required: true
         default: 'v24.10.5'
 
 env:
@@ -33,7 +33,7 @@ jobs:
       CONFIG_DIR: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}
       CONFIG_FILE: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/make-config
       DIY_P0_SH: scripts/feed-conf.sh
-      DIY_P1_SH: scripts/customscript2.sh
+      DIY_P1_SH: scripts/commonscripts.sh
       DIY_P2_SH: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/customscript.sh
       UPLOAD_FIRMWARE: true
       UPLOAD_RELEASE: true
