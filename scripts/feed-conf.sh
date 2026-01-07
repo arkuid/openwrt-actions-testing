@@ -20,5 +20,3 @@ merge_package amneziawg-go
 merge_package luci-proto-amneziawg
 
 rm -rf $REPO_NAME
-
-./scripts/feeds update -a
