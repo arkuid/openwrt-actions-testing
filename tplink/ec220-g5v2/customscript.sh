@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 commits=(
     "41bbbf8f3b11b23b4e16450d1f3de66308c3effa"
