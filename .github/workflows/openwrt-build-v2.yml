@@ -101,7 +101,7 @@ jobs:
           echo "Running custom script: $DIY_P2_SH"
           chmod +x "$DIY_P2_SH"
           cd openwrt
-          $GITHUB_WORKSPACE/$DIY_P0_SH
+          $GITHUB_WORKSPACE/$DIY_P2_SH
           echo "status=executed" >> $GITHUB_OUTPUT
         else
           echo "No custom script found at $DIY_P2_SH, skipping..."
