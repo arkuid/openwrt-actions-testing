@@ -11,8 +11,9 @@ function merge_package(){
 
 git clone --depth=1 --single-branch $REPO_URL
 
-rm -rf feeds/packages/lang/golang
-git clone https://github.com/sbwml/packages_lang_golang -b 23.x feeds/packages/lang/golang
+git clone https://github.com/openwrt/packages.git
+rm -r feeds/packages/lang/golang
+cp -r packages/lang/golang feeds/packages/lang
 
 merge_package kmod-amneziawg
 merge_package amneziawg-tools
