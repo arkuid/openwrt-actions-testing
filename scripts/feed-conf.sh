@@ -1,23 +1,8 @@
 #!/bin/bash
 
-REPO_URL="https://github.com/this-username-has-been-taken/amneziawg-openwrt"
-REPO_NAME=`echo $REPO_URL | rev | cut -d'/' -f 1 | rev`
+echo "src-git awgopenwrt https://github.com/this-username-has-been-taken/amneziawg-openwrt" >> feeds.conf.default
 
-function merge_package(){
-    pkg=`echo $1 | rev | cut -d'/' -f 1 | rev`
-    [ -d package/openwrt-packages ] || mkdir -p package/openwrt-packages
-    mv $REPO_NAME/$pkg package/openwrt-packages/
-}
-
-git clone --depth=1 --single-branch $REPO_URL
 
 git clone https://github.com/openwrt/packages.git
 rm -r feeds/packages/lang/golang
 cp -r packages/lang/golang feeds/packages/lang
-
-merge_package kmod-amneziawg
-merge_package amneziawg-tools
-merge_package amneziawg-go
-merge_package luci-proto-amneziawg
-
-rm -rf $REPO_NAME
