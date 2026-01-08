@@ -1,10 +1,5 @@
-#!/bin/bash
-
-set -e
-
-echo "Applying Archer C20 v4 16MB patch..."
-
-cat << 'EOF' | patch -p1 --forward || true
+#!/bin/sh
+cat > tp20v4-org-16mb-usb.patch << 'EOF'
 --- a/target/linux/ramips/image/mt76x8.mk
 +++ b/target/linux/ramips/image/mt76x8.mk
 @@ -547,10 +547,10 @@ TARGET_DEVICES += totolink_lr1200
@@ -62,14 +57,12 @@ cat << 'EOF' | patch -p1 --forward || true
  				read-only;
  			};
  		};
---- /dev/null
+--- a/tools/firmware-utils/patches/001-16mb-mktplinkfw2.patch
 +++ b/tools/firmware-utils/patches/001-16mb-mktplinkfw2.patch
 @@ -0,0 +1,15 @@
 +--- firmware-utils.orig/src/mktplinkfw2.c
 ++++ firmware-utils/src/mktplinkfw2.c
 +@@ -149,6 +149,12 @@ static struct flash_layout layouts[] = {
-+ 		.id		= "8Mmtk",
-+ 		.fw_max_len	= 0x7a0000,
 + 		.kernel_la	= 0x80000000,
 + 		.kernel_ep	= 0x80000000,
 + 		.rootfs_ofs	= 0x140000,
@@ -82,29 +75,6 @@ cat << 'EOF' | patch -p1 --forward || true
 + 	}, {
 + 		.id		= "8MSUmtk", /* Split U-Boot OS */
 + 		.fw_max_len	= 0x770000,
+ 
 EOF
-
-
-mkdir -p tools/firmware-utils/patches
-
-cat > tools/firmware-utils/patches/001-16mb-mktplinkfw2.patch << 'EOF'
---- firmware-utils.orig/src/mktplinkfw2.c
-+++ firmware-utils/src/mktplinkfw2.c
-@@ -149,6 +149,12 @@ static struct flash_layout layouts[] = {
- 		.id		= "8Mmtk",
- 		.fw_max_len	= 0x7a0000,
- 		.kernel_la	= 0x80000000,
- 		.kernel_ep	= 0x80000000,
- 		.rootfs_ofs	= 0x140000,
-+	}, {
-+		.id		= "16Mmtk",
-+		.fw_max_len	= 0xfa0000,
-+		.kernel_la	= 0x80000000,
-+		.kernel_ep	= 0x80000000,
-+		.rootfs_ofs	= 0x140000,
- 	}, {
- 		.id		= "8MSUmtk", /* Split U-Boot OS */
- 		.fw_max_len	= 0x770000,
-EOF
-
-echo "✓ Archer C20 v4 16MB patch applied successfully!"
+patch -p1 < tp20v4-org-16mb-usb.patch
