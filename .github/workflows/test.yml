@@ -1,4 +1,4 @@
-name: testo
+name: Тестовый workflow
 
 on:
   workflow_dispatch:
@@ -10,21 +10,40 @@ jobs:
       contents: write
 
     steps:
-        
-    - name: Check out the project branch
+    - name: Проверка ветки проекта
       uses: actions/checkout@main
 
-    - name: Initialize the compilation environment
+    - name: Инициализация среды компиляции
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        readlink -f /usr/include/asm
+        # ПЕРВАЯ ПРОВЕРКА: исходное состояние
+        echo "=== Начальная проверка /usr/include/asm ==="
+        readlink -f /usr/include/asm || echo "Файл/ссылка не существует"
+        
+        # Обновление списка пакетов
         sudo -E apt-get -qq update
-        sudo -E apt-get -qq purge azure-cli ghc* zulu* hhvm firefox powershell openjdk* dotnet* google* mysql* php* android* rename speedtest-cli
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
-        sudo -E apt-get -qq install build-essential clang flex g++ gawk gcc-multilib gettext libpcap-dev \
-        git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev swig libpython3-dev aria2 jq subversion qemu-utils ccache rename libelf-dev
+        
+        # Удаление ненужных пакетов (исключаем hhvm, так как он недоступен)
+        echo "=== Удаление ненужных пакетов ==="
+        sudo -E apt-get -qq purge azure-cli ghc* zulu* firefox powershell openjdk* dotnet* google* mysql* php* android* rename speedtest-cli || true
+        
+        # Очистка лишних файлов
+        echo "=== Очистка файлов ==="
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+        
+        # Установка необходимых пакетов для компиляции
+        echo "=== Установка пакетов для компиляции ==="
+        sudo -E apt-get -qq install build-essential clang flex g++ gawk gcc-multilib gettext \
+          libpcap-dev git libncurses5-dev libssl-dev python3-distutils rsync unzip \
+          zlib1g-dev swig libpython3-dev aria2 jq subversion qemu-utils ccache rename libelf-dev
+        
+        # Очистка кэша apt
+        echo "=== Очистка кэша apt ==="
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
-        readlink -f /usr/include/asm
         
+        # ВТОРАЯ ПРОВЕРКА: финальное состояние
+        echo "=== Финальная проверка /usr/include/asm ==="
+        readlink -f /usr/include/asm || echo "Файл/ссылка не существует"
+        echo "=== Проверка завершена ==="
