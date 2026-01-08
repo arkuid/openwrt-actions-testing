@@ -19,7 +19,8 @@ jobs:
       run: |
         # ПЕРВАЯ ПРОВЕРКА: исходное состояние
         echo "=== Начальная проверка /usr/include/asm ==="
-        readlink -f /usr/include/asm || echo "Файл/ссылка не существует"
+        INITIAL_ASM_LINK=$(readlink -f /usr/include/asm 2>/dev/null || echo "не существует")
+        echo "Начальное значение: $INITIAL_ASM_LINK"
         
         # Обновление списка пакетов
         sudo -E apt-get -qq update
@@ -28,16 +29,16 @@ jobs:
         echo "=== Удаление ненужных пакетов ==="
         sudo -E apt-get -qq purge azure-cli ghc* zulu* firefox powershell openjdk* dotnet* google* mysql* php* android* rename speedtest-cli || true
         
-        # Очистка лишних файлов
-        echo "=== Очистка файлов ==="
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
-        
+       
         # Установка необходимых пакетов для компиляции
         echo "=== Установка пакетов для компиляции ==="
         sudo -E apt-get -qq install build-essential clang flex g++ gawk gcc-multilib gettext \
           libpcap-dev git libncurses5-dev libssl-dev python3-distutils rsync unzip \
           zlib1g-dev swig libpython3-dev aria2 jq subversion qemu-utils ccache rename libelf-dev
-        
+
+        # Очистка лишних файлов
+        echo "=== Очистка файлов ==="
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
         # Очистка кэша apt
         echo "=== Очистка кэша apt ==="
         sudo -E apt-get -qq autoremove --purge
@@ -45,5 +46,10 @@ jobs:
         
         # ВТОРАЯ ПРОВЕРКА: финальное состояние
         echo "=== Финальная проверка /usr/include/asm ==="
-        readlink -f /usr/include/asm || echo "Файл/ссылка не существует"
-        echo "=== Проверка завершена ==="
+        FINAL_ASM_LINK=$(readlink -f /usr/include/asm 2>/dev/null || echo "не существует")
+        echo "Финальное значение: $FINAL_ASM_LINK"
+        
+        # Вывод сравнения
+        echo "=== Сравнение результатов ==="
+        echo "До: $INITIAL_ASM_LINK"
+        echo "После: $FINAL_ASM_LINK"
