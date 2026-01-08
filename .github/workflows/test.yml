@@ -22,29 +22,11 @@ jobs:
         INITIAL_ASM_LINK=$(readlink -f /usr/include/asm 2>/dev/null || echo "не существует")
         echo "Начальное значение: $INITIAL_ASM_LINK"
         
-        # Обновление списка пакетов
         sudo -E apt-get -qq update
-        
-        # Удаление ненужных пакетов (исключаем hhvm, так как он недоступен)
-        echo "=== Удаление ненужных пакетов ==="
-        sudo -E apt-get -qq purge azure-cli ghc* zulu* firefox powershell openjdk* dotnet* google* mysql* php* android* rename speedtest-cli || true
-        
-        # Очистка лишних файлов
-        echo "=== Очистка файлов ==="
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
-        
-        # Установка необходимых пакетов для компиляции
-        echo "=== Установка пакетов для компиляции ==="
         sudo -E apt-get -qq install build-essential clang flex g++ gawk gcc-multilib gettext \
-          libpcap-dev git libncurses5-dev libssl-dev python3 python3-pip python3-dev rsync unzip \
-          zlib1g-dev swig libpython3-dev aria2 jq subversion qemu-utils ccache rename libelf-dev
-        
-        # Дополнительная установка distutils через pip, если нужно
-        echo "=== Установка дополнительных Python пакетов ==="
-        python3 -m pip install distutils --user || true
-        
-        # Очистка кэша apt
-        echo "=== Очистка кэша apt ==="
+        git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev swig libpython3-dev aria2 jq subversion qemu-utils ccache rename libelf-dev
+        sudo -E apt-get -qq purge azure-cli ghc* zulu* hhvm llvm* firefox powershell openjdk* dotnet* google* mysql* php* android* rename speedtest-cli
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
         
