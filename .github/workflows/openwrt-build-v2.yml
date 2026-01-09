@@ -141,7 +141,7 @@ jobs:
         echo "Found firmware: $FIRST_FILE"
         echo "Target directory: $TARGET_DIR"
         echo "TARGET_DIR=$TARGET_DIR" >> $GITHUB_ENV
-        cd "openwrt/bin/targets/$TARGET_DIR"
+        cd "$TARGET_DIR"
         echo "Current directory: $PWD"
         ls -la
         if [ -d "packages" ]; then
