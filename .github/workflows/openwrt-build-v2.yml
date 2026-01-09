@@ -124,7 +124,7 @@ jobs:
         cd openwrt
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
-        echo "date1=$(date +%d.%m.%Y)" >> $GITHUB_ENV
+        echo "build_date=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Organize Files
@@ -160,16 +160,21 @@ jobs:
       uses: actions/upload-artifact@main
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: ${{ env.date1 }}_${{ env.DEVICE_VENDOR }}_${{ env.DEVICE_MODEL }}
+        name: ${{ env.build_date }}_${{ env.DEVICE_VENDOR }}_${{ env.DEVICE_MODEL }}
         path: ${{ env.FIRMWARE }}
 
     - name: Generate release tags
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        echo "release_tag=${{ env.date2 }}" >> $GITHUB_OUTPUT
+        RELEASE_TAG="${{ env.build_date }}-${{ env.DEVICE_VENDOR }}-${{ env.DEVICE_MODEL }}"
+        echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+        echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
         touch release.txt
         echo "📥 Загрузка прошивки" >> release.txt
+        echo "Device: ${{ env.DEVICE_VENDOR }} ${{ env.DEVICE_MODEL }}" >> release.txt
+        echo "Build date: ${{ env.build_date }}" >> release.txt
+        echo "OpenWrt branch: ${{ env.REPO_BRANCH }}" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
     
     - name: Publish to release
@@ -179,6 +184,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: ${{ env.FIRMWARE }}/*
-        name: ${{ env.DEVICE_VENDOR }}-${{ env.DEVICE_MODEL }}-${{ env.date1 }}
-        tag_name: ${{ steps.tag.outputs.release_tag }}
+        name: ${{ env.DEVICE_VENDOR }}-${{ env.DEVICE_MODEL }}-${{ env.build_date }}
+        tag_name: ${{ env.RELEASE_TAG }}
         body_path: release.txt
+        prerelease: false
+        draft: false
