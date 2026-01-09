@@ -11,3 +11,6 @@ echo "CONFIG_PACKAGE_kmod-amneziawg=y" >> .config
 echo "CONFIG_PACKAGE_amneziawg-go=n" >> .config
 echo "CONFIG_PACKAGE_amneziawg-tools=y" >> .config
 echo "CONFIG_PACKAGE_luci-proto-amneziawg=y" >> .config
+git clone https://github.com/openwrt/packages.git
+rm -r feeds/packages/lang/golang
+cp -r packages/lang/golang feeds/packages/lang
