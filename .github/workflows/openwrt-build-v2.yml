@@ -1,4 +1,4 @@
-name: openwrt build v2
+name: openwrt build v3
 
 on:
   workflow_dispatch:
@@ -132,20 +132,26 @@ jobs:
       if: ${{ env.UPLOAD_FIRMWARE == 'true' && !cancelled() }}
       run: |
         cd openwrt/bin/targets/
-        find . -type f \( -name "*sysupgrade*.bin" -o -name "*factory*.bin" \) ! -path "*/packages/*" -print0 | head -1 | while IFS= read -r -d '' first_file; do
-          TARGET_DIR=$(dirname "$(dirname "$first_file")")
-          echo "Found target directory: $TARGET_DIR"
-          echo "TARGET_DIR=$TARGET_DIR" >> $GITHUB_ENV
-        done
-        if [ -z "$TARGET_DIR" ]; then
-          echo "ERROR: Could not find target directory!"
+        FIRST_FILE=$(find . -type f \( -name "*sysupgrade*.bin" -o -name "*factory*.bin" \) ! -path "*/packages/*" -print -quit)
+        if [ -z "$FIRST_FILE" ]; then
+          echo "ERROR: Could not find any firmware files!"
           exit 1
         fi
+        TARGET_DIR=$(dirname "${FIRST_FILE#./}")
+        echo "Found firmware: $FIRST_FILE"
+        echo "Target directory: $TARGET_DIR"
+        echo "TARGET_DIR=$TARGET_DIR" >> $GITHUB_ENV
         cd "openwrt/bin/targets/$TARGET_DIR"
         echo "Current directory: $PWD"
         ls -la
+        if [ -d "packages" ]; then
+          tar -czf packages.tar.gz packages/
+          echo "Packages archived to packages.tar.gz"
+        else
+          echo "No packages directory found to archive"
+        fi
         rm -rf packages *.config *.buildinfo *.json sha256sums && find . -maxdepth 1 -type f \( -name "*.tar.zst" ! -name "openwrt-imagebuilder-*.tar.zst" \) -exec rm -f {} \;
-        echo "After cleanup:"
+        echo "Files after cleanup:"
         ls -la
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
