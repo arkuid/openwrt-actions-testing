@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
 REPO_URL="https://github.com/this-username-has-been-taken/amneziawg-openwrt"
 REPO_NAME=`echo $REPO_URL | rev | cut -d'/' -f 1 | rev`
 
@@ -13,9 +11,9 @@ function merge_package(){
 
 git clone --depth=1 --single-branch $REPO_URL
 
-git clone https://github.com/openwrt/packages.git
-rm -r feeds/packages/lang/golang
-cp -r packages/lang/golang feeds/packages/lang
+#git clone https://github.com/openwrt/packages.git
+#rm -r feeds/packages/lang/golang
+#cp -r packages/lang/golang feeds/packages/lang
 
 
 merge_package kmod-amneziawg
