@@ -150,7 +150,7 @@ jobs:
         else
           echo "No packages directory found to archive"
         fi
-        rm -rf packages *.config *.buildinfo *.json sha256sums && find . -maxdepth 1 -type f -name "*.tar.zst" ! -name "openwrt-imagebuilder-*.tar.zst" ! -name "packages.tar.gz" -exec rm -f {} \;
+        rm -rf packages *.config *.buildinfo *.json sha256sums && find . -maxdepth 1 -type f \( -name "*.tar.zst" -o -name "*.tar.xz" \) ! -name "openwrt-imagebuilder-*.tar.zst" ! -name "openwrt-imagebuilder-*.tar.xz" ! -name "packages.tar.gz" -exec rm -f {} \;
         echo "Files after cleanup:"
         ls -la
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
