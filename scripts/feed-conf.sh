@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "src-git awgopenwrt https://github.com/this-username-has-been-taken/amneziawg-openwrt" >> feeds.conf.default
+#echo "src-git awgopenwrt https://github.com/this-username-has-been-taken/amneziawg-openwrt" >> feeds.conf.default
 
 
 #git clone https://github.com/openwrt/packages.git
