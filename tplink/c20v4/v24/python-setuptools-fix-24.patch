@@ -1,0 +1,48 @@
+From 9babdbe7e032db05aa85a94d15dd420d08f3fb48 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Sat, 10 Jan 2026 13:50:14 +0100
+Subject: [PATCH] python-zope-{event,interface}: drop python-setuptools/host
+ dependency
+
+While backporting commits from master, it was overlooked that OpenWrt 24.10
+does not have python-setuptools/host, but only python-setuptools, so we can
+depend on that instead.
+
+Fixes:
+```
+WARNING: Makefile 'package/feeds/packages/python-zope-event/Makefile' has a build dependency on 'python-setuptools/host', which does not exist
+WARNING: Makefile 'package/feeds/packages/python-zope-interface/Makefile' has a build dependency on 'python-setuptools/host', which does not exist
+```
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ lang/python/python-zope-event/Makefile     | 2 +-
+ lang/python/python-zope-interface/Makefile | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lang/python/python-zope-event/Makefile b/lang/python/python-zope-event/Makefile
+index a658025bc2678..2f364a069e6fd 100644
+--- a/lang/python/python-zope-event/Makefile
++++ b/lang/python/python-zope-event/Makefile
+@@ -8,7 +8,7 @@ PYPI_NAME:=zope.event
+ PYPI_SOURCE_NAME:=zope_event
+ PKG_HASH:=6052a3e0cb8565d3d4ef1a3a7809336ac519bc4fe38398cb8d466db09adef4f0
+ 
+-PKG_BUILD_DEPENDS:=python3/host python-setuptools/host
++PKG_BUILD_DEPENDS:=python3/host python-setuptools
+ 
+ PKG_LICENSE:=ZPL-2.1
+ PKG_LICENSE_FILES:=LICENSE.txt
+diff --git a/lang/python/python-zope-interface/Makefile b/lang/python/python-zope-interface/Makefile
+index 957cce8449d11..fe8bc226a165e 100644
+--- a/lang/python/python-zope-interface/Makefile
++++ b/lang/python/python-zope-interface/Makefile
+@@ -22,7 +22,7 @@ PKG_MAINTAINER:=Jeffery To <jeffery.to@gmail.com>
+ 
+ PKG_BUILD_DEPENDS:= \
+ 	python3/host \
+-	python-setuptools/host
++	python-setuptools
+ 
+ include ../pypi.mk
+ include $(INCLUDE_DIR)/package.mk
