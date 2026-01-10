@@ -83,3 +83,7 @@ cat > tp20v4-org-16mb-usb.patch << 'EOF'
  
 EOF
 patch -p1 < tp20v4-org-16mb-usb.patch
+for p in *.patch; do patch -p1 -d feeds/packages < "$p"; done
+
+
+
