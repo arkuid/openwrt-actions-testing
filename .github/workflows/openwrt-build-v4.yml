@@ -1,4 +1,4 @@
-name: openwrt build v3
+name: openwrt build v4
 
 on:
   workflow_dispatch:
