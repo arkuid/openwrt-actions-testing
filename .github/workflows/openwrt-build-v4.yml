@@ -1,0 +1,195 @@
+name: openwrt build v3
+
+on:
+  workflow_dispatch:
+    inputs:
+      device_vendor:
+        description: 'Device vendor'
+        required: true
+        default: 'tplink'
+      device_model:
+        description: 'Device model'
+        required: true
+        default: 'cpe210'
+      openwrt_branch:
+        description: 'OpenWrt branch/version'
+        required: true
+        default: 'v24.10.5'
+
+env:
+  REPO_URL: https://github.com/openwrt/openwrt
+  TZ: Europe/Moscow
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    env:
+      DEVICE_VENDOR: ${{ github.event.inputs.device_vendor }}
+      DEVICE_MODEL: ${{ github.event.inputs.device_model }}
+      REPO_BRANCH: ${{ github.event.inputs.openwrt_branch }}
+      OPENWRT_MAJOR_VERSION: ${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || 'v24' }}
+      CONFIG_DIR: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || 'v24' }}
+      CONFIG_FILE: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || 'v24' }}/make-config
+      DIY_P2_SH: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || 'v24' }}/customscript.sh
+      DIY_P0_SH: scripts/feed-conf.sh
+      DIY_P1_SH: scripts/commonscripts.sh
+      UPLOAD_FIRMWARE: true
+      UPLOAD_RELEASE: true
+
+    steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        root-reserve-mb: 512
+        swap-size-mb: 1024
+        remove-dotnet: 'true'
+        remove-android: 'true'
+        remove-haskell: 'true'
+        remove-codeql: 'true'
+        
+    - name: Check out the project branch
+      uses: actions/checkout@main
+
+    - name: Initialize the compilation environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo -E apt-get -qq update
+        sudo -E apt-get -qq install build-essential clang flex g++ gawk gcc-multilib getword \
+        git libncurses5-dev libssl-dev rsync unzip zlib1g-dev swig libpython3-dev jq subversion qemu-utils ccache rename libelf-dev
+        sudo -E apt-get -qq purge azure-cli ghc* zulu* llvm* firefox powershell openjdk* dotnet* google* mysql* php* android* rename speedtest-cli
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+        
+    - name: Initialize Environment and Display System Info
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        chmod +x scripts/*.sh 2>/dev/null || true
+        $GITHUB_WORKSPACE/scripts/system-Information.sh
+        
+    - name: Download firmware source code
+      run: |
+        git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+
+    - name: Update feeds & add packages & install feeds
+      run: |
+        chmod +x "$DIY_P0_SH"
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P0_SH
+
+    - name: Load config
+      run: |
+        if [ ! -e "$CONFIG_FILE" ]; then
+          echo "ERROR: Config file not found at $CONFIG_FILE"
+          echo "Please create config for OpenWrt $OPENWRT_MAJOR_VERSION"
+          exit 1
+        fi
+        
+        echo "Using config for OpenWrt $OPENWRT_MAJOR_VERSION: $CONFIG_FILE"
+        cat "$CONFIG_FILE" > openwrt/.config
+        
+        chmod +x "$DIY_P1_SH" && cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P1_SH
+
+    - name: Run custom pre-config script (if exists)
+      id: custom_pre_config
+      run: |
+        if [ -f "$DIY_P2_SH" ]; then
+          echo "Running custom script for OpenWrt $OPENWRT_MAJOR_VERSION: $DIY_P2_SH"
+          chmod +x "$DIY_P2_SH"
+          cd openwrt
+          $GITHUB_WORKSPACE/$DIY_P2_SH
+          echo "status=executed" >> $GITHUB_OUTPUT
+        else
+          echo "Custom script not found at $DIY_P2_SH, skipping..."
+          echo "status=skipped" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Download the installation package
+      id: package
+      run: |
+        cd openwrt
+        make defconfig
+        cat .config
+        make download -j$(nproc)
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+
+    - name: Compile the firmware
+      id: compile
+      run: |
+        cd openwrt
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc) || make -j1 || make -j1 V=s
+        echo "build_date=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Organize Files
+      id: organize
+      if: ${{ env.UPLOAD_FIRMWARE == 'true' && !cancelled() }}
+      run: |
+        cd openwrt/bin/targets/
+        FIRST_FILE=$(find . -type f \( -name "*sysupgrade*.bin" -o -name "*factory*.bin" \) ! -path "*/packages/*" -print -quit)
+        if [ -z "$FIRST_FILE" ]; then
+          echo "ERROR: Could not find any firmware files!"
+          exit 1
+        fi
+        TARGET_DIR=$(dirname "${FIRST_FILE#./}")
+        echo "Found firmware: $FIRST_FILE"
+        echo "Target directory: $TARGET_DIR"
+        echo "TARGET_DIR=$TARGET_DIR" >> $GITHUB_ENV
+        cd "$TARGET_DIR"
+        echo "Current directory: $PWD"
+        ls -la
+        if [ -d "packages" ]; then
+          tar -czf packages.tar.gz packages/
+          echo "Packages archived to packages.tar.gz"
+        else
+          echo "No packages directory found to archive"
+        fi
+        rm -rf packages *.config *.buildinfo *.json sha256sums && find . -maxdepth 1 -type f \( -name "*.tar.zst" -o -name "*.tar.xz" \) ! -name "openwrt-imagebuilder-*.tar.zst" ! -name "openwrt-imagebuilder-*.tar.xz" ! -name "packages.tar.gz" -exec rm -f {} \;
+        echo "Files after cleanup:"
+        ls -la
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Upload the firmware to github
+      uses: actions/upload-artifact@main
+      if: steps.organize.outputs.status == 'success' && !cancelled()
+      with:
+        name: ${{ env.build_date }}_${{ env.DEVICE_VENDOR }}_${{ env.DEVICE_MODEL }}_${{ env.OPENWRT_MAJOR_VERSION }}
+        path: ${{ env.FIRMWARE }}
+
+    - name: Generate release tags
+      id: tag
+      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+      run: |
+        RELEASE_TAG="${{ env.build_date }}-${{ env.DEVICE_VENDOR }}-${{ env.DEVICE_MODEL }}-${{ env.OPENWRT_MAJOR_VERSION }}"
+        echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+        echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+        touch release.txt
+        echo "📥 Загрузка прошивки" >> release.txt
+        echo "Device: ${{ env.DEVICE_VENDOR }} ${{ env.DEVICE_MODEL }}" >> release.txt
+        echo "Build date: ${{ env.build_date }}" >> release.txt
+        echo "OpenWrt branch: ${{ env.REPO_BRANCH }}" >> release.txt
+        echo "OpenWrt major version: ${{ env.OPENWRT_MAJOR_VERSION }}" >> release.txt
+        echo "status=success" >> $GITHUB_OUTPUT
+    
+    - name: Publish to release
+      uses: softprops/action-gh-release@v1
+      if: steps.tag.outputs.status == 'success' && !cancelled()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: ${{ env.FIRMWARE }}/*
+        name: ${{ env.DEVICE_VENDOR }}-${{ env.DEVICE_MODEL }}-${{ env.build_date }}-${{ env.OPENWRT_MAJOR_VERSION }}
+        tag_name: ${{ env.RELEASE_TAG }}
+        body_path: release.txt
+        prerelease: false
+        draft: false
