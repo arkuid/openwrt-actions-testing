@@ -9,6 +9,8 @@ function merge_package(){
     mv $REPO_NAME/$pkg package/openwrt-packages/
 }
 
+./scripts/feeds update -a
+
 git clone --depth=1 --single-branch $REPO_URL
 
 git clone https://github.com/openwrt/packages.git officalpackages
