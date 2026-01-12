@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sed -i 's/https:\/\/git.openwrt.org/https:\/\/github.com\/openwrt/g' feeds.conf.default
+sed -i 's/https:\/\/git.openwrt.org/feeds/https:\/\/github.com\/openwrt/g' feeds.conf.default
 
 ./scripts/feeds update -a
 git clone https://github.com/openwrt/packages.git officalpackages
