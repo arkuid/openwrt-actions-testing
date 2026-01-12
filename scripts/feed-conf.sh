@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Merge_package
 function merge_package(){
     repo=`echo $1 | rev | cut -d'/' -f 1 | rev`
@@ -10,7 +9,7 @@ function merge_package(){
     mv $2 package/openwrt-packages/
     rm -rf $repo
 }
-
+./scripts/feeds update -a
 git clone https://github.com/openwrt/packages.git officalpackages
 rm -r feeds/packages/lang/golang
 cp -r officalpackages/lang/golang feeds/packages/lang
@@ -23,4 +22,4 @@ merge_package "-b master https://github.com/this-username-has-been-taken/amnezia
 merge_package "-b master https://github.com/remittor/zapret-openwrt/" zapret-openwrt/luci-app-zapret2
 merge_package "-b master https://github.com/remittor/zapret-openwrt/" zapret-openwrt/zapret2
 
-./scripts/feeds update -a
+./scripts/feeds install -a
