@@ -1,25 +1,29 @@
 #!/bin/bash
-# Merge_package
-function merge_package(){
-    repo=`echo $1 | rev | cut -d'/' -f 1 | rev`
-    pkg=`echo $2 | rev | cut -d'/' -f 1 | rev`
-    # find package/ -follow -name $pkg -not -path "package/openwrt-packages/*" | xargs -rt rm -rf
-    git clone --depth=1 --single-branch $1
-    [ -d package/openwrt-packages ] || mkdir -p package/openwrt-packages
-    mv $2 package/openwrt-packages/
-    rm -rf $repo
-}
+
 ./scripts/feeds update -a
 git clone https://github.com/openwrt/packages.git officalpackages
 rm -r feeds/packages/lang/golang
 cp -r officalpackages/lang/golang feeds/packages/lang
 rm -rf officalpackages
 
-merge_package "-b master https://github.com/this-username-has-been-taken/amneziawg-openwrt" amneziawg-openwrt/kmod-amneziawg
-merge_package "-b master https://github.com/this-username-has-been-taken/amneziawg-openwrt" amneziawg-openwrt/amneziawg-tools
-merge_package "-b master https://github.com/this-username-has-been-taken/amneziawg-openwrt" amneziawg-openwrt/amneziawg-go
-merge_package "-b master https://github.com/this-username-has-been-taken/amneziawg-openwrt" amneziawg-openwrt/luci-proto-amneziawg
-merge_package "-b master https://github.com/remittor/zapret-openwrt/" zapret-openwrt/luci-app-zapret2
-merge_package "-b master https://github.com/remittor/zapret-openwrt/" zapret-openwrt/zapret2
+REPOS=(
+    "https://github.com/this-username-has-been-taken/amneziawg-openwrt.git|kmod-amneziawg,amneziawg-tools,amneziawg-go,luci-proto-amneziawg"
+    "https://github.com/remittor/zapret-openwrt.git|luci-app-zapret2,zapret2"
+    # "https://github.com/other/repo.git|package1,package2,package3"
+)
+for item in "${REPOS[@]}"; do
+    repo_url=$(echo $item | cut -d'|' -f1)
+    packages=$(echo $item | cut -d'|' -f2)
+    repo_name=$(basename $repo_url .git)
+    echo "Обрабатываем $repo_name..."
+    git clone --depth=1 --single-branch $repo_url
+    mkdir -p package/openwrt-packages
+    IFS=',' read -ra PKG_ARRAY <<< "$packages"
+    for pkg in "${PKG_ARRAY[@]}"; do
+        echo "  Копируем $pkg"
+        cp -rf $repo_name/$pkg package/openwrt-packages/
+    done
+    rm -rf $repo_name
+done
 
 ./scripts/feeds install -a
