@@ -11,3 +11,5 @@ echo "CONFIG_PACKAGE_kmod-amneziawg=y" >> .config
 echo "CONFIG_PACKAGE_amneziawg-go=n" >> .config
 echo "CONFIG_PACKAGE_amneziawg-tools=y" >> .config
 echo "CONFIG_PACKAGE_luci-proto-amneziawg=y" >> .config
+echo "CONFIG_PACKAGE_luci-app-zapret2=y" >> .config
+echo "CONFIG_PACKAGE_zapret2=y" >> .config
