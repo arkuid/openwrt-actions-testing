@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sed -i 's/https:\/\/git.openwrt.org/https:\/\/github.com\/openwrt/g' feeds.conf.default
+
 ./scripts/feeds update -a
 git clone https://github.com/openwrt/packages.git officalpackages
 rm -r feeds/packages/lang/golang
