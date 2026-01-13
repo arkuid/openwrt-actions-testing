@@ -15,7 +15,7 @@ on:
         description: 'OpenWrt branch/version'
         required: true
         default: 'v24.10.5'
-          run_awg:
+      run_awg:
         description: 'Add awg?'
         required: true
         type: choice
