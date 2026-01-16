@@ -8,6 +8,8 @@ cat > mktplinkfw2.patch << 'EOF'
 +--- firmware-utils.orig/src/mktplinkfw2.c
 ++++ firmware-utils/src/mktplinkfw2.c
 +@@ -167,6 +167,12 @@ static struct flash_layout layouts[] = {
++ 		.id		= "8MSUmtk",
++ 		.fw_max_len	= 0x7b0000,
 + 		.kernel_la	= 0x80000000,
 + 		.kernel_ep	= 0x80000000,
 + 		.rootfs_ofs	= 0x140000,
@@ -20,7 +22,7 @@ cat > mktplinkfw2.patch << 'EOF'
 + 	}, {
 + 		.id		= "8MLmtk",
 + 		.fw_max_len	= 0x7b0000,
-
++
 EOF
 patch -p1 < mktplinkfw2.patch
 
@@ -39,12 +41,9 @@ sed -i '
 ' target/linux/ramips/dts/mt7628an_tplink_8m-split-uboot.dtsi
 
 
-commits=(
-    "13945f4fa374419c9025eb03a5c1937b180ca9bf"
-    "0cfa434942ac4afeb7127d57a35f04999988fac9"
-)
+commits="13945f4fa374419c9025eb03a5c1937b180ca9bf 0cfa434942ac4afeb7127d57a35f04999988fac9"
 
-for commit in "${commits[@]}"; do
+for commit in $commits; do
     patch_url="https://github.com/openwrt/openwrt/pull/21239/changes/${commit}.patch"
     curl -sL "$patch_url" -o "${commit}.patch"
     
