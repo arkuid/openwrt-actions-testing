@@ -8,8 +8,6 @@ cat > mktplinkfw2.patch << 'EOF'
 +--- firmware-utils.orig/src/mktplinkfw2.c
 ++++ firmware-utils/src/mktplinkfw2.c
 +@@ -167,6 +167,12 @@ static struct flash_layout layouts[] = {
-+ 		.id		= "8MSUmtk",
-+ 		.fw_max_len	= 0x7b0000,
 + 		.kernel_la	= 0x80000000,
 + 		.kernel_ep	= 0x80000000,
 + 		.rootfs_ofs	= 0x140000,
