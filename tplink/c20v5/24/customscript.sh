@@ -37,3 +37,17 @@ sed -i '
   s/reg = <0x7e0000 0x10000>/reg = <0x1fe0000 0x10000>/
   s/reg = <0x7f0000 0x10000>/reg = <0x1ff0000 0x10000>/
 ' target/linux/ramips/dts/mt7628an_tplink_8m-split-uboot.dtsi
+
+
+commits=(
+    "13945f4fa374419c9025eb03a5c1937b180ca9bf"
+    "0cfa434942ac4afeb7127d57a35f04999988fac9"
+)
+
+for commit in "${commits[@]}"; do
+    patch_url="https://github.com/openwrt/openwrt/pull/21239/changes/${commit}.patch"
+    curl -sL "$patch_url" -o "${commit}.patch"
+    
+    echo "Применяю патч: ${commit}"
+    patch -p1 < "${commit}.patch" 2>/dev/null
+done
