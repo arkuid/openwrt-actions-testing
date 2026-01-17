@@ -38,6 +38,9 @@ sed -i '
   s/reg = <0x7f0000 0x10000>/reg = <0x1ff0000 0x10000>/
 ' target/linux/ramips/dts/mt7628an_tplink_8m-split-uboot.dtsi
 
+# Для python-zope-event
+sed -i 's/python-setuptools\/host/python-setuptools/g' feeds/packages/lang/python/python-zope-event/Makefile
+sed -i 's/python-setuptools\/host/python-setuptools/g' feeds/packages/lang/python/python-zope-interface/Makefile
 
 commits="13945f4fa374419c9025eb03a5c1937b180ca9bf 0cfa434942ac4afeb7127d57a35f04999988fac9"
 
