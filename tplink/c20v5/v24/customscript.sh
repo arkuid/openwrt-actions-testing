@@ -45,7 +45,7 @@ sed -i 's/python-setuptools\/host/python-setuptools/g' feeds/packages/lang/pytho
 commits="13945f4fa374419c9025eb03a5c1937b180ca9bf 0cfa434942ac4afeb7127d57a35f04999988fac9"
 
 for commit in $commits; do
-    patch_url="https://github.com/openwrt/openwrt/pull/21239/changes/${commit}.patch"
+    patch_url="https://github.com/openwrt/openwrt/pull/21239/commits/${commit}.patch"
     curl -sL "$patch_url" -o "${commit}.patch"
     
     echo "Применяю патч: ${commit}"
