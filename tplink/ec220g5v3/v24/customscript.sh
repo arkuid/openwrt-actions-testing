@@ -15,5 +15,4 @@ for commit in $commits; do
     echo "Применяю патч: ${commit}"
     patch -p1 < "${commit}.patch" 2>/dev/null
 done
-
-for p in *.patch; do patch -p1 < "$p"; done
+patch -p1 < ec220g5v3.patch
