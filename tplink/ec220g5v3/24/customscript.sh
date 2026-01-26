@@ -6,7 +6,7 @@ sed -i 's/python-setuptools\/host/python-setuptools/g' feeds/packages/lang/pytho
 # Для exim
 sed -i 's/^  DEPENDS:= +USE_GLIBC:libcrypt-compat +libdb47 +libpcre2 $(ICONV_DEPENDS) +BUILD_NLS:libidn2 +BUILD_NLS:libidn$/  DEPENDS:=+libdb47 +libpcre2 $(ICONV_DEPENDS) +BUILD_NLS:libidn2 +BUILD_NLS:libidn/' feeds/packages/mail/exim/Makefile
 
-commits="13945f4fa374419c9025eb03a5c1937b180ca9bf 0cfa434942ac4afeb7127d57a35f04999988fac9"
+commits="13945f4fa374419c9025eb03a5c1937b180ca9bf 0cfa434942ac4afeb7127d57a35f04999988fac9 009b883aebc0dea386ce6ae97cdfa9911178e82f"
 
 for commit in $commits; do
     patch_url="https://github.com/openwrt/openwrt/commit/${commit}.patch"
