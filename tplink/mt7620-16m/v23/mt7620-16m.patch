@@ -1,0 +1,228 @@
+--- a/target/linux/ramips/dts/mt7620a_tplink_archer.dtsi
++++ b/target/linux/ramips/dts/mt7620a_tplink_archer.dtsi
+@@ -59,30 +59,30 @@
+ 			partition@20000 {
+ 				compatible = "tplink,firmware";
+ 				label = "firmware";
+-				reg = <0x20000 0x7a0000>;
++				reg = <0x20000 0xfa0000>;
+ 			};
+ 
+-			partition@7c0000 {
++			partition@fc0000 {
+ 				label = "config";
+-				reg = <0x7c0000 0x10000>;
++				reg = <0xfc0000 0x10000>;
+ 				read-only;
+ 			};
+ 
+-			rom: partition@7d0000 {
++			rom: partition@fd0000 {
+ 				label = "rom";
+ 				reg = <0x7d0000 0x10000>;
+ 				read-only;
+ 			};
+ 
+-			partition@7e0000 {
++			partition@fe0000 {
+ 				label = "romfile";
+-				reg = <0x7e0000 0x10000>;
++				reg = <0xfe0000 0x10000>;
+ 				read-only;
+ 			};
+ 
+-			radio: partition@7f0000 {
++			radio: partition@ff0000 {
+ 				label = "radio";
+-				reg = <0x7f0000 0x10000>;
++				reg = <0xff0000 0x10000>;
+ 				read-only;
+ 			};
+ 		};
+--- a/target/linux/ramips/mt7620/base-files/etc/board.d/02_network
++++ b/target/linux/ramips/mt7620/base-files/etc/board.d/02_network
+@@ -236,6 +236,7 @@ ramips_setup_interfaces()
+ 			"1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
+ 		;;
+ 	mercusys,ac12g-v1-8m|\
++	mercusys,ac12g-v1-16m|\
+ 	tplink,archer-c5-v4)
+ 		ucidef_add_switch "switch0"
+ 		ucidef_add_switch_attr "switch0" "enable" "0"
+--- /dev/null
++++ b/target/linux/ramips/dts/mt7620a_mercusys_ac12g-v1-16m.dts
+@@ -0,0 +1,116 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++#include "mt7620a_tplink_archer.dtsi"
++
++/ {
++	compatible = "mercusys,ac12g-v1-16m", "ralink,mt7620a-soc";
++	model = "Mercusys AC12G v1 (16M)";
++
++	aliases {
++		led-boot = &led_power;
++		led-failsafe = &led_power;
++		led-running = &led_power;
++		led-upgrade = &led_power;
++		label-mac-device = &ethernet;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_power: power {
++			label = "green:power";
++			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
++		};
++
++		wan {
++			label = "green:wan";
++			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
++		};
++
++		lan {
++			label = "green:lan";
++			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
++		};
++
++		wlan {
++			label = "green:wlan";
++			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy1tpt";
++		};
++	};
++
++	/delete-node/ keys;
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
++	rtl8367s {
++		compatible = "realtek,rtl8367b";
++		realtek,extif = <7 1 0 1 1 1 1 1 1 2>;
++		mii-bus = <&mdio0>;
++		phy-id = <29>;
++	};
++};
++
++&spi0 {
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++	};
++};
++
++&state_default {
++	gpio {
++		groups = "i2c", "uartf", "ephy", "rgmii2";
++		function = "gpio";
++	};
++};
++
++&ethernet {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
++
++	nvmem-cells = <&macaddr_rom_f100>;
++	nvmem-cell-names = "mac-address";
++
++	port@5 {
++		status = "okay";
++		mediatek,fixed-link = <1000 1 1 1>;
++		phy-mode = "rgmii";
++	};
++
++	mdio0: mdio-bus {
++		status = "okay";
++		reset-gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
++		reset-delay-us = <10000>;
++	};
++};
++
++&ehci {
++	status = "disabled";
++};
++
++&ohci {
++	status = "disabled";
++};
++
++&wmac {
++	pinctrl-names = "default", "pa_gpio";
++	pinctrl-0 = <&pa_pins>;
++	pinctrl-1 = <&pa_gpio_pins>;
++
++	nvmem-cells = <&macaddr_rom_f100>;
++	nvmem-cell-names = "mac-address";
++};
++
++&wifi {
++	nvmem-cells = <&macaddr_rom_f100>;
++	nvmem-cell-names = "mac-address";
++};
+--- a/target/linux/ramips/image/mt7620.mk
++++ b/target/linux/ramips/image/mt7620.mk
+@@ -789,6 +789,23 @@ define Device/mercusys_ac12g-v1-8m
+ endef
+ TARGET_DEVICES += mercusys_ac12g-v1-8m
+ 
++define Device/mercusys_ac12g-v1-16m
++  $(Device/tplink-v2)
++  SOC := mt7620a
++  IMAGE_SIZE := 16000k
++  TPLINK_FLASHLAYOUT := 16Mmtk
++  TPLINK_HWID := 0x04da857c
++  TPLINK_HWREV := 0x0c000600
++  TPLINK_HWREVADD := 0x04000000
++  IMAGES += tftp-recovery.bin
++  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
++  DEVICE_VENDOR := Mercusys
++  DEVICE_MODEL := AC12G
++  DEVICE_VARIANT := v1 (16M)
++  DEVICE_PACKAGES := kmod-mt76x2 kmod-switch-rtl8367b
++endef
++TARGET_DEVICES += mercusys_ac12g-v1-16m
++
+ define Device/microduino_microwrt
+   SOC := mt7620a
+   IMAGE_SIZE := 16128k
+@@ -1232,8 +1249,8 @@ TARGET_DEVICES += tplink_archer-c2-v1
+ define Device/tplink_archer-c5-v4
+   $(Device/tplink-v2)
+   SOC := mt7620a
+-  IMAGE_SIZE := 7808k
+-  TPLINK_FLASHLAYOUT := 8Mmtk
++  IMAGE_SIZE := 16000k
++  TPLINK_FLASHLAYOUT := 16Mmtk
+   TPLINK_HWID := 0x04da857c
+   TPLINK_HWREV := 0x0c000600
+   TPLINK_HWREVADD := 0x04000000
+@@ -1281,8 +1298,8 @@ TARGET_DEVICES += tplink_archer-mr200
+ define Device/tplink_ec220-g5-v2
+   $(Device/tplink-v2)
+   SOC := mt7620a
+-  IMAGE_SIZE := 7808k
+-  TPLINK_FLASHLAYOUT := 8Mmtk
++  IMAGE_SIZE := 16000k
++  TPLINK_FLASHLAYOUT := 16Mmtk
+   TPLINK_HWID := 0x02015a15
+   TPLINK_HWREV := 0x55000600
+   TPLINK_HWREVADD := 0x03000000
+--- a/target/linux/ramips/mt7620/base-files/etc/board.d/01_leds
++++ b/target/linux/ramips/mt7620/base-files/etc/board.d/01_leds
+@@ -226,6 +226,7 @@ tplink,archer-c20i)
+ 	ucidef_set_led_switch "wan" "wan" "blue:wan" "switch0" "0x01"
+ 	;;
+ mercusys,ac12g-v1-8m|\
++mercusys,ac12g-v1-16m|\
+ tplink,archer-c5-v4)
+ 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x0f"
+ 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch1" "0x10"
