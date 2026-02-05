@@ -120,6 +120,7 @@ CONFIG_TARGET_MULTI_PROFILE=y
 # CONFIG_TARGET_ramips_mt7620_DEVICE_lenovo_newifi-y1s is not set
 # CONFIG_TARGET_ramips_mt7620_DEVICE_linksys_e1700 is not set
 # CONFIG_TARGET_ramips_mt7620_DEVICE_mercusys_ac12g-v1-8m is not set
+# CONFIG_TARGET_ramips_mt7620_DEVICE_mercusys_ac12g-v1-16m is not set
 # CONFIG_TARGET_ramips_mt7620_DEVICE_microduino_microwrt is not set
 # CONFIG_TARGET_ramips_mt7620_DEVICE_netcore_nw5212 is not set
 # CONFIG_TARGET_ramips_mt7620_DEVICE_netgear_ex2700 is not set
@@ -265,8 +266,9 @@ CONFIG_TARGET_PER_DEVICE_ROOTFS=y
 # CONFIG_TARGET_DEVICE_ramips_mt7620_DEVICE_ralink_mt7620a-mt7610e-evb is not set
 # CONFIG_TARGET_DEVICE_ramips_mt7620_DEVICE_ralink_mt7620a-evb is not set
 # CONFIG_TARGET_DEVICE_ramips_mt7620_DEVICE_ralink_mt7620a-v22sg-evb is not set
-CONFIG_TARGET_DEVICE_ramips_mt7620_DEVICE_mercusys_ac12g-v1-8m=y
-CONFIG_TARGET_DEVICE_PACKAGES_ramips_mt7620_DEVICE_mercusys_ac12g-v1-8m=""
+# CONFIG_TARGET_DEVICE_ramips_mt7620_DEVICE_mercusys_ac12g-v1-8m is not set
+CONFIG_TARGET_DEVICE_ramips_mt7620_DEVICE_mercusys_ac12g-v1-16m=y
+CONFIG_TARGET_DEVICE_PACKAGES_ramips_mt7620_DEVICE_mercusys_ac12g-v1-16m=""
 # CONFIG_TARGET_DEVICE_ramips_mt7620_DEVICE_microduino_microwrt is not set
 # CONFIG_TARGET_DEVICE_ramips_mt7620_DEVICE_netcore_nw5212 is not set
 # CONFIG_TARGET_DEVICE_ramips_mt7620_DEVICE_netgear_ex2700 is not set
