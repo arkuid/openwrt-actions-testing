@@ -6,10 +6,8 @@ sed -i \
   feeds.conf.default
 
 ./scripts/feeds update -a
-git clone https://github.com/openwrt/packages.git officalpackages
-rm -r feeds/packages/lang/golang
-cp -r officalpackages/lang/golang feeds/packages/lang
-rm -rf officalpackages
+rm -rf feeds/packages/lang/golang
+git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang
 
 REPOS=(
     "https://github.com/this-username-has-been-taken/amneziawg-openwrt.git|master|kmod-amneziawg,amneziawg-tools,amneziawg-go,luci-proto-amneziawg"
