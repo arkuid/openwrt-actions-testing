@@ -11,7 +11,7 @@ git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/l
 
 REPOS=(
     "https://github.com/this-username-has-been-taken/amneziawg-openwrt.git|master|kmod-amneziawg,amneziawg-tools,amneziawg-go,luci-proto-amneziawg"
-    # "https://github.com/remittor/zapret-openwrt.git|master|luci-app-zapret2,zapret2"
+    "https://github.com/remittor/zapret-openwrt.git|master|luci-app-zapret2,zapret2"
     # "https://github.com/other/repo.git|branch_name|package1,package2,package3"
 )
 
