@@ -226,3 +226,21 @@
  tplink,archer-c5-v4)
  	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x0f"
  	ucidef_set_led_switch "wan" "wan" "green:wan" "switch1" "0x10"
+--- /dev/null
++++ b/tools/firmware-utils/patches/001-16mb-mktplinkfw2.patch
+@@ -0,0 +1,15 @@
++--- firmware-utils.orig/src/mktplinkfw2.c
+++++ firmware-utils/src/mktplinkfw2.c
++@@ -149,6 +149,12 @@ static struct flash_layout layouts[] = {
++ 		.kernel_la	= 0x80000000,
++ 		.kernel_ep	= 0x80000000,
++ 		.rootfs_ofs	= 0x140000,
+++	}, {
+++		.id		= "16Mmtk",
+++		.fw_max_len	= 0xfa0000,
+++		.kernel_la	= 0x80000000,
+++		.kernel_ep	= 0x80000000,
+++		.rootfs_ofs	= 0x140000,
++ 	}, {
++ 		.id		= "8MSUmtk", /* Split U-Boot OS */
++ 		.fw_max_len	= 0x770000,
