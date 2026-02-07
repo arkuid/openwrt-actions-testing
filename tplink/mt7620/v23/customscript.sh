@@ -30,4 +30,5 @@ for commit in "${commits[@]}"; do
     echo "Применяю патч: ${commit}"
     patch -p1 < "${commit}.patch" 2>/dev/null
 done
+patch -p1 < fix-hwid.patch
 rm -f *.patch
