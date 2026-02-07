@@ -208,7 +208,7 @@
 +	nvmem-cell-names = "eeprom", "mac-address";
 +};
 +
-+&eeprom_factory_8000 {
++&eeprom_radio_8000 {
 +    /* MT7613 full EEPROM size */
 +    reg = <0x8000 0x4da8>;
 +};
