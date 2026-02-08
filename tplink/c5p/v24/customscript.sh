@@ -20,7 +20,7 @@ patch -p1 < c5prov1.patch
 
 
 FILENAME="board-tplink_archer-c5-pro-v1.qca9888"
-TARGET_DIR="package/firmware/ipq-wifi/files/"
+TARGET_DIR="package/firmware/ipq-wifi/files"
 
 echo "=== Распаковка $FILENAME ==="
 
