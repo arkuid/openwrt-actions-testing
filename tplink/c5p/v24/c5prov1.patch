@@ -1,0 +1,250 @@
+--- a/target/linux/ath79/generic/base-files/etc/board.d/01_leds
++++ b/target/linux/ath79/generic/base-files/etc/board.d/01_leds
+@@ -407,6 +407,7 @@ tplink,tl-wr1043n-v5)
+ 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x04"
+ 	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x02"
+ 	;;
++tplink,archer-c5-pro-v1|\
+ tplink,archer-c6-v2|\
+ tplink,archer-c6-v2-us)
+ 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x3c"
+--- a/target/linux/ath79/generic/base-files/etc/board.d/02_network
++++ b/target/linux/ath79/generic/base-files/etc/board.d/02_network
+@@ -428,6 +428,7 @@ ath79_setup_interfaces()
+ 	mercury,mw4530r-v1|\
+ 	tplink,archer-a7-v5|\
+ 	tplink,archer-a9-v6|\
++	tplink,archer-c5-pro-v1|\
+ 	tplink,archer-c6-v2|\
+ 	tplink,archer-c6-v2-us|\
+ 	tplink,archer-c7-v4|\
+--- a/package/firmware/ipq-wifi/Makefile
++++ b/package/firmware/ipq-wifi/Makefile
+@@ -56,6 +56,7 @@ ALLWIFIBOARDS:= \
+ 	spectrum_sax1v1k \
+ 	tplink_eap660hd-v1 \
+ 	tplink_archer-c59-v1 \
++	tplink_archer-c5-pro-v1 \
+ 	tplink_archer-c6-v2 \
+ 	tplink_archer-c60-v1 \
+ 	tplink_archer-c60-v2 \
+@@ -191,6 +192,7 @@ $(eval $(call generate-ipq-wifi-package,skspruce_wia3300-20,SKSpruce WIA3300-20)
+ $(eval $(call generate-ipq-wifi-package,spectrum_sax1v1k,Spectrum SAX1V1K))
+ $(eval $(call generate-ipq-wifi-package,tplink_eap660hd-v1,TP-Link EAP660 HD v1))
+ $(eval $(call generate-ipq-wifi-package,tplink_archer-c59-v1,TP-Link Archer C59 V1))
++$(eval $(call generate-ipq-wifi-package,tplink_archer-c5-pro-v1,TP-Link Archer C5 Pro V1))
+ $(eval $(call generate-ipq-wifi-package,tplink_archer-c6-v2,TP-Link Archer C6 V2))
+ $(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v1,TP-Link Archer C60 V1))
+ $(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v2,TP-Link Archer C60 V2))
+--- a/target/linux/ath79/image/generic-tp-link.mk
++++ b/target/linux/ath79/image/generic-tp-link.mk
+@@ -97,6 +97,23 @@ define Device/tplink_archer-c59-v2
+ endef
+ TARGET_DEVICES += tplink_archer-c59-v2
+ 
++define Device/tplink_archer-c5-pro-v1
++  $(Device/tplink-v2)
++  SOC := qca9563
++  IMAGE_SIZE := 16000k
++  DEVICE_MODEL := Archer C5 Pro
++  DEVICE_VARIANT := v1
++  TPLINK_BOARD_ID := ARCHER-C5-PRO-V1
++  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct -ath10k-board-qca9888 ipq-wifi-tplink_archer-c5-pro-v1
++  TPLINK_HWID := 0x4e8c8701
++  TPLINK_HWREV := 0x00060034
++  TPLINK_FLASHLAYOUT := 16Mqca
++  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | \
++	tplink-v2-header -s -V "ver. 1.0"
++endef
++TARGET_DEVICES += tplink_archer-c5-pro-v1
++
++
+ define Device/tplink_archer-c6-v2
+   $(Device/tplink-safeloader-uimage)
+   SOC := qca9563
+
+--- /dev/null
++++ b/target/linux/ath79/dts/qca9563_tplink_archer-c5-pro-v1.dts
+@@ -0,0 +1,182 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++#include <dt-bindings/leds/common.h>
++
++#include "qca9563_tplink_archer-x6-v2.dtsi"
++
++/ {
++	compatible = "tplink,archer-c5-pro-v1", "qca,qca9563";
++	model = "TP-Link Archer C5 Pro v1";
++
++	aliases {
++		label-mac-device = &eth0;
++
++		led-boot = &led_power;
++		led-failsafe = &led_power;
++		led-running = &led_power;
++		led-upgrade = &led_power;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_power: power {
++			function = LED_FUNCTION_POWER;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		wlan2g {
++			label = "green:wlan2g";
++			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy1tpt";
++		};
++
++		wlan5g {
++			label = "green:wlan5g";
++			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy0tpt";
++		};
++
++		lan {
++			function = LED_FUNCTION_LAN;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
++		};
++
++		wan {
++			function = LED_FUNCTION_WAN;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++		};
++
++		wan_fail {
++			function = LED_FUNCTION_WAN;
++			color = <LED_COLOR_ID_AMBER>;
++			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
++		};
++
++		wps {
++			function = LED_FUNCTION_WPS;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "Reset button";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++
++		wps {
++			label = "WPS button";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++	};
++};
++
++&pcie {
++	wifi@0,0 {
++		compatible = "qcom,ath10k";
++		reg = <0x0000 0 0 0 0>;
++		nvmem-cells = <&cal_art_5000>, <&macaddr_romfile_f100 (-1)>;
++		nvmem-cell-names = "pre-calibration", "mac-address";
++		qcom,ath10k-calibration-variant = "TP-Link-Archer-c5-pro-v1";
++	};
++};
++
++&spi {
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <25000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "u-boot";
++				reg = <0x000000 0x020000>;
++				read-only;
++			};
++
++			partition@20000 {
++				compatible = "tplink,firmware";
++				label = "firmware";
++				reg = <0x020000 0xfa0000>;
++			};
++
++			partition@fc0000 {
++				label = "config";
++				reg = <0xfc0000 0x010000>;
++				read-only;
++			};
++
++			partition@fd0000 {
++				label = "romfile";
++				reg = <0xfd0000 0x010000>;
++				read-only;
++
++				nvmem-layout {
++					compatible = "fixed-layout";
++					#address-cells = <1>;
++					#size-cells = <1>;
++
++					macaddr_romfile_f100: macaddr@f100 {
++						compatible = "mac-base";
++						reg = <0xf100 0x6>;
++						#nvmem-cell-cells = <1>;
++					};
++				};
++			};
++
++			partition@fe0000 {
++				label = "rom";
++				reg = <0xfe0000 0x010000>;
++				read-only;
++			};
++
++			partition@ff0000 {
++				label = "art";
++				reg = <0xff0000 0x010000>;
++				read-only;
++
++				nvmem-layout {
++					compatible = "fixed-layout";
++					#address-cells = <1>;
++					#size-cells = <1>;
++
++					cal_art_1000: calibration@1000 {
++						reg = <0x1000 0x440>;
++					};
++
++					cal_art_5000: calibration@5000 {
++						reg = <0x5000 0x2f20>;
++					};
++				};
++			};
++		};
++	};
++};
++
++&eth0 {
++	nvmem-cells = <&macaddr_romfile_f100 1>;
++	nvmem-cell-names = "mac-address";
++};
++
++&wmac {
++	nvmem-cells = <&macaddr_romfile_f100 0>, <&cal_art_1000>;
++	nvmem-cell-names = "mac-address", "calibration";
++};
