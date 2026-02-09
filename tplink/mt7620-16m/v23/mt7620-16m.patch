@@ -19,7 +19,8 @@
 -			rom: partition@7d0000 {
 +			rom: partition@fd0000 {
  				label = "rom";
- 				reg = <0x7d0000 0x10000>;
+-				reg = <0x7d0000 0x10000>;
++				reg = <0xfd0000 0x10000>;
  				read-only;
  			};
  
