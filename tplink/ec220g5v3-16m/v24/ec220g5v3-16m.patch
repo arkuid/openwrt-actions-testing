@@ -212,8 +212,8 @@
 +    /* MT7613 full EEPROM size */
 +    reg = <0x8000 0x4da8>;
 +};
---- a/target/linux/ramips/dts/mt7620a_tplink_archer.dtsi
-+++ b/target/linux/ramips/dts/mt7620a_tplink_archer.dtsi
+--- a/target/linux/ramips/dts/mt7620a_tplink_8m.dtsi
++++ b/target/linux/ramips/dts/mt7620a_tplink_8m.dtsi
 @@ -59,30 +59,30 @@
  			partition@20000 {
  				compatible = "tplink,firmware";
