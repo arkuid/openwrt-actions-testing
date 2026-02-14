@@ -1,0 +1,274 @@
+--- a/target/linux/ramips/mt7620/base-files/etc/board.d/01_leds
++++ b/target/linux/ramips/mt7620/base-files/etc/board.d/01_leds
+@@ -246,6 +246,10 @@ tplink,ec220-g5-v2)
+ 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x17"
+ 	ucidef_set_led_switch "wan" "wan" "orange:wan" "switch1" "0x08"
+ 	;;
++tplink,ec220-g5-v3)
++	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x17"
++	ucidef_set_led_switch "wan" "wan" "orange:wan" "switch1" "0x08"
++	;;
+ tplink,re200-v1)
+ 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
+ 	;;
+--- a/target/linux/ramips/mt7620/base-files/etc/board.d/02_network
++++ b/target/linux/ramips/mt7620/base-files/etc/board.d/02_network
+@@ -254,6 +254,12 @@ ramips_setup_interfaces()
+ 		ucidef_add_switch "switch1" \
+ 			"0:lan:3" "1:lan:2" "2:lan:1" "4:lan:4" "3:wan" "7@eth0"
+ 		;;
++	tplink,ec220-g5-v3)
++		ucidef_add_switch "switch0"
++		ucidef_add_switch_attr "switch0" "enable" "0"
++		ucidef_add_switch "switch1" \
++			"0:lan:3" "1:lan:2" "2:lan:1" "4:lan:4" "3:wan" "7@eth0"
++		;;
+ 	wavlink,wl-wn531g3)
+ 		ucidef_add_switch "switch0" \
+ 			"0:lan:4" "1:lan:3" "2:lan:2" "5:lan:1" "4:wan" "6@eth0"
+@@ -432,7 +438,8 @@ ramips_setup_macs()
+ 	tplink,archer-c5-v4|\
+ 	tplink,archer-c50-v1|\
+ 	tplink,archer-mr200|\
+-	tplink,ec220-g5-v2)
++	tplink,ec220-g5-v2|\
++	tplink,ec220-g5-v3)
+ 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary rom 0xf100)" 1)
+ 		;;
+ 	wavlink,wl-wn531g3|\
+--- a/target/linux/ramips/image/mt7620.mk
++++ b/target/linux/ramips/image/mt7620.mk
+@@ -1305,6 +1305,22 @@ define Device/tplink_ec220-g5-v2
+ endef
+ TARGET_DEVICES += tplink_ec220-g5-v2
+ 
++define Device/tplink_ec220-g5-v3
++  $(Device/tplink-v2)
++  SOC := mt7620a
++  IMAGE_SIZE := 16000k
++  TPLINK_FLASHLAYOUT := 16Mmtk
++  TPLINK_HWID := 0x02015a15
++  TPLINK_HWREV := 0x55000600
++  TPLINK_HWREVADD := 0x03000000
++  IMAGES += tftp-recovery.bin
++  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
++  DEVICE_MODEL := EC220-G5
++  DEVICE_VARIANT := v3
++  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap kmod-switch-rtl8367b 
++endef
++TARGET_DEVICES += tplink_ec220-g5-v3
++
+ define Device/tplink_re200-v1
+   $(Device/tplink-v1-okli)
+   SOC := mt7620a
+--- /dev/null
++++ b/target/linux/ramips/dts/mt7620a_tplink_ec220-g5-v3.dts
+@@ -0,0 +1,148 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++#include <dt-bindings/leds/common.h>
++
++#include "mt7620a_tplink_8m.dtsi"
++
++/ {
++	compatible = "tplink,ec220-g5-v3", "ralink,mt7620a-soc";
++	model = "TP-Link EC220-G5 v3";
++
++	aliases {
++		led-boot = &led_power;
++		led-failsafe = &led_power;
++		led-running = &led_power;
++		led-upgrade = &led_power;
++		label-mac-device = &ethernet;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_power: led-0 {
++			function = LED_FUNCTION_POWER;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
++		};
++
++		led-1 {
++			function = LED_FUNCTION_WAN;
++			color = <LED_COLOR_ID_ORANGE>;
++			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
++		};
++
++		led-2 {
++			function = LED_FUNCTION_WAN;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio2 13 GPIO_ACTIVE_LOW>;
++		};
++
++		led-3 {
++			function = LED_FUNCTION_LAN;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
++		};
++
++		led-4 {
++			function = LED_FUNCTION_WLAN_2GHZ;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy1tpt";
++		};
++
++		led-5 {
++			function = LED_FUNCTION_WLAN_5GHZ;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy0tpt";
++		};
++
++		led-6 {
++			function = LED_FUNCTION_WPS;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++
++		rfkill {
++			label = "rfkill";
++			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RFKILL>;
++		};
++	};
++
++	rtl8367s {
++		compatible = "realtek,rtl8367b";
++		realtek,extif = <7 1 0 1 1 1 1 1 1 2>;
++		mii-bus = <&mdio0>;
++		phy-id = <29>;
++	};
++};
++
++&spi0 {
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++	};
++};
++
++&state_default {
++	gpio {
++		groups = "i2c", "uartf", "ephy", "rgmii2";
++		function = "gpio";
++	};
++};
++
++&ethernet {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
++
++	port@5 {
++		status = "okay";
++		mediatek,fixed-link = <1000 1 1 1>;
++		phy-mode = "rgmii";
++	};
++
++	mdio0: mdio-bus {
++		status = "okay";
++		reset-gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
++		reset-delay-us = <10000>;
++	};
++};
++
++&ehci {
++	status = "disabled";
++};
++
++&ohci {
++	status = "disabled";
++};
++
++&wmac {
++	pinctrl-names = "default", "pa_gpio";
++	pinctrl-0 = <&pa_pins>;
++	pinctrl-1 = <&pa_gpio_pins>;
++
++	nvmem-cells = <&eeprom_radio_0>, <&macaddr_rom_f100 0>;
++	nvmem-cell-names = "eeprom", "mac-address";
++};
++
++
++&wifi {
++	nvmem-cells = <&eeprom_radio_8000>, <&macaddr_rom_f100 2>;
++	nvmem-cell-names = "eeprom", "mac-address";
++};
++
++&eeprom_radio_8000 {
++    /* MT7613 full EEPROM size */
++    reg = <0x8000 0x4da8>;
++};
+--- a/target/linux/ramips/dts/mt7620a_tplink_archer.dtsi
++++ b/target/linux/ramips/dts/mt7620a_tplink_archer.dtsi
+@@ -59,30 +59,30 @@
+ 			partition@20000 {
+ 				compatible = "tplink,firmware";
+ 				label = "firmware";
+-				reg = <0x20000 0x7a0000>;
++				reg = <0x20000 0xfa0000>;
+ 			};
+ 
+-			partition@7c0000 {
++			partition@fc0000 {
+ 				label = "config";
+-				reg = <0x7c0000 0x10000>;
++				reg = <0xfc0000 0x10000>;
+ 				read-only;
+ 			};
+ 
+-			rom: partition@7d0000 {
++			rom: partition@fd0000 {
+ 				label = "rom";
+-				reg = <0x7d0000 0x10000>;
++				reg = <0xfd0000 0x10000>;
+ 				read-only;
+ 			};
+ 
+-			partition@7e0000 {
++			partition@fe0000 {
+ 				label = "romfile";
+-				reg = <0x7e0000 0x10000>;
++				reg = <0xfe0000 0x10000>;
+ 				read-only;
+ 			};
+ 
+-			radio: partition@7f0000 {
++			radio: partition@ff0000 {
+ 				label = "radio";
+-				reg = <0x7f0000 0x10000>;
++				reg = <0xff0000 0x10000>;
+ 				read-only;
+ 			};
+ 		};
+--- /dev/null
++++ b/tools/firmware-utils/patches/001-16mb-mktplinkfw2.patch
+@@ -0,0 +1,15 @@
++--- firmware-utils.orig/src/mktplinkfw2.c
+++++ firmware-utils/src/mktplinkfw2.c
++@@ -149,6 +149,12 @@ static struct flash_layout layouts[] = {
++ 		.kernel_la	= 0x80000000,
++ 		.kernel_ep	= 0x80000000,
++ 		.rootfs_ofs	= 0x140000,
+++	}, {
+++		.id		= "16Mmtk",
+++		.fw_max_len	= 0xfa0000,
+++		.kernel_la	= 0x80000000,
+++		.kernel_ep	= 0x80000000,
+++		.rootfs_ofs	= 0x140000,
++ 	}, {
++ 		.id		= "8MSUmtk", /* Split U-Boot OS */
++ 		.fw_max_len	= 0x770000,
