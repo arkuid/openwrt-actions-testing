@@ -214,7 +214,7 @@
 +};
 --- a/target/linux/ramips/dts/mt7620a_tplink_8m.dtsi
 +++ b/target/linux/ramips/dts/mt7620a_tplink_8m.dtsi
-@@ -59,30 +59,30 @@
+@@ -59,18 +59,18 @@
  			partition@20000 {
  				compatible = "tplink,firmware";
  				label = "firmware";
@@ -230,12 +230,16 @@
  				read-only;
  			};
  
--			rom: partition@7d0000 {
-+			rom: partition@fd0000 {
+-			partition@7d0000 {
++			partition@fd0000 {
  				label = "rom";
 -				reg = <0x7d0000 0x10000>;
 +				reg = <0xfd0000 0x10000>;
  				read-only;
+ 
+ 				nvmem-layout {
+@@ -86,15 +86,15 @@
+ 				};
  			};
  
 -			partition@7e0000 {
@@ -246,14 +250,14 @@
  				read-only;
  			};
  
--			radio: partition@7f0000 {
-+			radio: partition@ff0000 {
+-			partition@7f0000 {
++			partition@ff0000 {
  				label = "radio";
 -				reg = <0x7f0000 0x10000>;
 +				reg = <0xff0000 0x10000>;
  				read-only;
- 			};
- 		};
+ 
+ 				nvmem-layout {
 --- /dev/null
 +++ b/tools/firmware-utils/patches/001-16mb-mktplinkfw2.patch
 @@ -0,0 +1,15 @@
