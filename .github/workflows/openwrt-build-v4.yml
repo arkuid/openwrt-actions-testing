@@ -30,10 +30,10 @@ jobs:
       DEVICE_VENDOR: ${{ github.event.inputs.device_vendor }}
       DEVICE_MODEL: ${{ github.event.inputs.device_model }}
       REPO_BRANCH: ${{ github.event.inputs.openwrt_branch }}
-      OPENWRT_MAJOR_VERSION: ${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || 'v24' }}
-      CONFIG_DIR: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || 'v24' }}
-      CONFIG_FILE: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || 'v24' }}/make-config
-      DIY_P2_SH: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || 'v24' }}/customscript.sh
+      OPENWRT_MAJOR_VERSION: ${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || startsWith(github.event.inputs.openwrt_branch, 'v25') && 'v25' || startsWith(github.event.inputs.openwrt_branch, 'v26') && 'v26' || 'v24' }}
+      CONFIG_DIR: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || startsWith(github.event.inputs.openwrt_branch, 'v25') && 'v25' || startsWith(github.event.inputs.openwrt_branch, 'v26') && 'v26' || 'v24' }}
+      CONFIG_FILE: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || startsWith(github.event.inputs.openwrt_branch, 'v25') && 'v25' || startsWith(github.event.inputs.openwrt_branch, 'v26') && 'v26' || 'v24' }}/make-config
+      DIY_P2_SH: ${{ github.event.inputs.device_vendor }}/${{ github.event.inputs.device_model }}/${{ startsWith(github.event.inputs.openwrt_branch, 'v23') && 'v23' || startsWith(github.event.inputs.openwrt_branch, 'v25') && 'v25' || startsWith(github.event.inputs.openwrt_branch, 'v26') && 'v26' || 'v24' }}/customscript.sh
       DIY_P0_SH: scripts/feed-conf.sh
       DIY_P1_SH: scripts/commonscripts.sh
       UPLOAD_FIRMWARE: true
