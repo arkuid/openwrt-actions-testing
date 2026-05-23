@@ -7,7 +7,7 @@ sed -i \
 
 ./scripts/feeds update -a
 rm -rf feeds/packages/lang/golang
-git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang
+git clone https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
 
 REPOS=(
     "https://github.com/this-username-has-been-taken/amneziawg-openwrt.git|master|kmod-amneziawg,amneziawg-tools,amneziawg-go,luci-proto-amneziawg"
